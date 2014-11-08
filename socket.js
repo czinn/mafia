@@ -14,7 +14,7 @@ module.exports = function(server) {
     var game = null;
 
     socket.on("setName", function(data) {
-      if(id == null) {
+      if(id === null) {
         id = data.id;
         // Try to reconnect to all games
         for(var i = 0; i < games.length; i++) {
@@ -39,7 +39,7 @@ module.exports = function(server) {
       if(!id || !name || game) return;
 
       for(var i = 0; i < this.games.length; i++) {
-        if(this.games[i].room == data && !this.games[i].started) {
+        if(this.games[i].room === data && !this.games[i].closed) {
           game = games[i];
           game.addPlayer(id, socket, name);
         }
