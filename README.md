@@ -2,6 +2,8 @@
 
 A minimalist webapp for playing Mafia without the need for a game master.
 
+[http://mafia.semicolon.ca](Live version)
+
 ## Development
 
 Clone and run `npm install` and `bower install`.
