@@ -2,7 +2,7 @@
 
 A minimalist webapp for playing Mafia without the need for a game master.
 
-[http://mafia.semicolon.ca](Live version)
+[Live version](http://mafia.semicolon.ca)
 
 ## Development
 
