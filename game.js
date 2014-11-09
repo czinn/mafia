@@ -1,4 +1,4 @@
-var uuid = require("node-uuid");
+var Moniker = require("moniker");
 
 /* Roles are:
  * - villager
@@ -31,12 +31,13 @@ function Player(id, socket, name) {
   this.votingFor = null;
   this.dead = false;
   this.lynched = false; // Lynched is also dead, but if lynched, role is visible
+  this.leftGame = false;
 }
 
 function Game(io) {
   this.io = io;
   this.players = [];
-  this.room = uuid.v4(); // essentially the game id
+  this.room = Moniker.choose(); // essentially the game id
   this.closed = false; // closed to new joins (so that the moderator knows how many people there are)
   this.started = false; // game actually started (roles dealt out, etc)
   this.dayNumber = 1; // increases at end of night
@@ -80,6 +81,31 @@ Game.prototype.reconnectPlayer = function(id, socket, name) {
     }
   }
   return false;
+}
+
+Game.prototype.leavePlayer = function(id) {
+  var p = this.playerById(id);
+  p.leftGame = true;
+
+  this.lastAction = p.name + " left the game.";
+  this.sendGameStateUpdate();
+
+  if(!p.dead && this.started) {
+    // Kill the player
+    p.dead = true;
+    this.sendPlayerListUpdate(null);
+  } else if(!this.started) {
+    // Straight up remove the player
+    for(var i = 0; i < this.players.length; i++) {
+      if(this.players[i].id == id) {
+        this.players.splice(i, 1);
+        break;
+      }
+    }
+    this.sendPlayerListUpdate(null);
+  }
+
+  p.id += "leave";
 }
 
 Game.prototype.playerById = function(id) {
@@ -144,6 +170,8 @@ Game.prototype.sendGameStateUpdate = function() {
   _this = this;
 
   this.players.forEach(function(p) {
+    if(p.leftGame) return;
+
     p.socket.emit("gameState", _this.gameState());
   });
 }
@@ -155,6 +183,8 @@ Game.prototype.sendPlayerListUpdate = function(role) {
 
   this.players.forEach(function(p) {
     if(p.role === role || role === null) {
+      if(p.leftGame) return;
+
       p.socket.emit("playerList", _this.playerListFor(p.id));
     }
   });

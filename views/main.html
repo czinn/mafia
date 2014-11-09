@@ -16,11 +16,12 @@
       <div ng-show="view == 'gameList'">
         <button type="button" ng-click="createGame()">Create Game</button>
         <hr>
-        <div class="list-item" ng-repeat="game in gameList" ng-click="joinGame(game)">{{ game.split("-")[0] }}</div>
+        <div class="list-item" ng-repeat="game in gameList" ng-click="joinGame(game)">{{ game }}</div>
         <span ng-show="gameList.length == 0">No games created</span>
       </div>
       <div ng-show="view == 'game'">
         <h3 ng-show="!gameState.closed">Waiting for players...</h3>
+        <p ng-show="!gameState.closed"><i>{{ gameState.room }}</i></p>
         <h3 ng-show="gameState.closed && !gameState.started">Choosing roles...</h3>
         <h3 ng-show="gameState.started && !gameState.night">Day {{ gameState.dayNumber }}</h3>
         <h3 ng-show="gameState.started && gameState.night">Night {{ gameState.dayNumber }}</h3>
@@ -78,6 +79,9 @@
           <button type="button" ng-click="submitSettings()">Start Game</button>
         </div>
         <button type="button" ng-show="isMod() && gameState.started && !gameState.night" ng-click="startNight()">Begin Night</button>
+
+        <hr>
+        <button type="button" ng-click="leaveGame()">Leave Game</button>
       </div>
     </div>
     

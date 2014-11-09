@@ -25,6 +25,14 @@ module.exports = function(server) {
 
     // Sends the updated game list to everyone
     function updateGameList() {
+      // See if any games can be removed
+      for(var i = 0; i < games.length; i++) {
+        if(games[i].players.length == 0) {
+          games.splice(i, 1);
+          i--;
+        }
+      }
+
       io.sockets.emit("gameList", gameList());
     }
 
@@ -59,8 +67,18 @@ module.exports = function(server) {
         if(games[i].room === data && !games[i].closed) {
           game = games[i];
           game.addPlayer(id, socket, name);
+        } else if(games[i].room === data && games[i].closed) {
+          updateGameList();
         }
       }
+    });
+
+    socket.on("leaveGame", function(data) {
+      if(!id || !name || !game) return;
+
+      game.leavePlayer(id);
+      game = null;
+      updateGameList();
     });
 
     socket.on("gameAction", function(data) {

@@ -64,6 +64,11 @@ controller("MainCtrl", function($scope, socket) {
     socket.emit("joinGame", game);
   };
 
+  $scope.leaveGame = function() {
+    socket.emit("leaveGame");
+    $scope.view = "gameList";
+  }
+
   $scope.toggleHidden = function() {
     $scope.roleHidden = !$scope.roleHidden;
   }

@@ -1,7 +1,6 @@
 {
   "name": "mafia",
   "main": "index.js",
-  "version": "0.0.0",
   "homepage": "https://github.com/Semicolon314/mafia",
   "authors": [
     "Charles Zinn"
