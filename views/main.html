@@ -28,7 +28,7 @@
 
         <p ng-show="gameState.started" class="last-action">{{ gameState.lastAction }}</p>
 
-        <button type="button" ng-show="gameState.started" ng-click="toggleHidden()" ng-class="roleHidden ? '' : 'role-' + me().role">
+        <button type="button" ng-show="gameState.started" ng-click="toggleHidden()" ng-class="roleHidden ? 'blank-class' : 'role-' + me().role">
           {{ roleHidden ? "Show Role" : me().role }}
         </button>
         <p ng-show="copInfo && !roleHidden">{{ copInfo }}</p>

@@ -221,10 +221,6 @@ Game.prototype.dealRoles = function() {
 
 // Resets some values and starts the night
 Game.prototype.startNight = function() {
-  this.players.forEach(function(p) {
-    p.votingFor = null;
-  });
-
   this.night = true;
 
   this.sendGameStateUpdate();
@@ -260,14 +256,15 @@ Game.prototype.endNight = function() {
 
   if(targets["mafia"] === targets["bodyguard"]) {
     // Kill off one of the mafia
-    this.players.forEach(function(p) {
+    for(var i = 0; i < this.players.length; i++) {
+      var p = this.players[i];
       if(p.role === "mafia") {
         p.dead = true;
         deadPeople.push(p);
         targets["mafia"] = null;
-        return false;
+        break;
       }
-    });
+    };
   }
 
   if(targets["mafia"] === targets["doctor"]) {
@@ -299,6 +296,10 @@ Game.prototype.endNight = function() {
       _this.lastAction += " " + p.name;
     });
   }
+
+  this.players.forEach(function(p) {
+    p.votingFor = null;
+  });
 
   this.night = false;
 
@@ -346,7 +347,7 @@ Game.prototype.gameAction = function(id, action, data) {
       var target = this.playerById(data);
 
       // TODO: More validation
-      if(self && target && self.id !== target.id && self.role !== target.role && !target.dead && canVote[self.role]) {
+      if(self && target && self.id !== target.id && self.role !== target.role && !self.dead && !target.dead && canVote[self.role]) {
         self.votingFor = target.id;
 
         this.sendPlayerListUpdate(self.role);
