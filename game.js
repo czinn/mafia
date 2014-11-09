@@ -46,11 +46,11 @@ function Game(io) {
 
   this.settings = {
     roles: {
-      "mafia": 3,
-      "cop": 2,
-      "doctor": 1,
-      "jester": 1,
-      "bodyguard": 1
+      "mafia": 1,
+      "cop": 0,
+      "doctor": 0,
+      "jester": 0,
+      "bodyguard": 0
     }
   }; // settings for the game
 
@@ -99,6 +99,7 @@ Game.prototype.votesForBy = function(id, role) {
     if(this.players[i].votingFor === id && this.players[i].role === role)
       count++;
   }
+
   return count;
 }
 
@@ -113,7 +114,7 @@ Game.prototype.playerListFor = function(id) {
       id: this.players[i].id.split("-")[0], // shortened id for identification, but can't impersonate
       name: this.players[i].name,
       role: this.players[i].role === p.role || this.players[i].lynched ? this.players[i].role : null,
-      votes: this.players[i].role === p.role ? this.votesForBy(this.players[i].id, p.role) : 0,
+      votes: this.votesForBy(this.players[i].id, p.role),
       mod: this.players[i].id === this.moderator,
       dead: this.players[i].dead,
       lynched: this.players[i].lynched
@@ -182,12 +183,9 @@ Game.prototype.dealRoles = function() {
     roleList[j] = t;
   }
 
-  console.log(roleList);
-
   // Deal one role out to each player
   this.players.forEach(function(p, i) {
     p.role = roleList[i];
-    console.log(p.name + " is a " + roleList[i]);
   });
 }
 
@@ -246,20 +244,22 @@ Game.prototype.endNight = function() {
     targets["mafia"] = null;
   }
 
-  if(targets["mafia"] !== null) {
+  if(targets["mafia"]) {
     var p = this.playerById(targets["mafia"]);
     p.dead = true;
     deadPeople.push(p);
   }
 
   // Cop info
-  var copTarget = this.playerById(targets["cop"]);
-  var guilty = copTarget.role === "mafia" || copTarget.role === "doctor" || copTarget.role === "bodyguard";
-  this.players.forEach(function(p) {
-    if(p.role === "cop") {
-      p.socket.emit("copInfo", copTarget.name + " is " + (guilty ? "guilty" : "innocent") + ".");
-    }
-  });
+  if(targets["cop"]) {
+    var copTarget = this.playerById(targets["cop"]);
+    var guilty = copTarget.role === "mafia" || copTarget.role === "doctor" || copTarget.role === "bodyguard";
+    this.players.forEach(function(p) {
+      if(p.role === "cop") {
+        p.socket.emit("copInfo", copTarget.name + " is " + (guilty ? "guilty" : "innocent") + ".");
+      }
+    });
+  }
 
   if(deadPeople.length == 0) {
     this.lastAction = "Nobody died last night.";
@@ -317,7 +317,7 @@ Game.prototype.gameAction = function(id, action, data) {
 
       // TODO: More validation
       if(self && target && self.id !== target.id && self.role !== target.role && !target.dead && canVote[self.role]) {
-        self.votingFor = data;
+        self.votingFor = target.id;
 
         this.sendPlayerListUpdate(self.role);
 

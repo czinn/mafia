@@ -40,6 +40,7 @@ module.exports = function(server) {
           }
         }
       }
+      socket.emit("gameList", gameList());
     });
 
     socket.on("createGame", function(data) {

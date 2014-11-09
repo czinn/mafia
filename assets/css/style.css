@@ -1,0 +1,159 @@
+@font-face {
+  font-family: "DejaVu";
+  src: url("DejaVuSerif.ttf");
+}
+
+html, body {
+  margin: 0px;
+  padding: 0px;
+  background-color: #222222;
+  color: #DDDDDD;
+  font-size: 20px;
+  text-align: center;
+  font-family: DejaVu;
+}
+
+.container {
+  max-width: 500px;
+  margin: 20px auto;
+}
+
+#nameView {
+  text-align: center;
+}
+
+input, button {
+  box-sizing: content-box;
+
+  font-size: 20px;
+  text-align: center;
+
+  border-radius: 5px;
+  border-style: solid;
+  border-width: 1px;
+  border-color: #000000;
+  background-color: #DDDDDD;
+  color: #222222;
+
+  padding: 5px;
+  margin: 5px auto;
+  width: 90%;
+
+  font-family: DejaVu;
+}
+
+button.plus, button.minus {
+  font-size: 15px;
+  font-weight: bold;
+  width: 15px;
+}
+
+button.plus {
+  background-color: #00FF00;
+}
+
+button.minus {
+  background-color: #FF0000;
+}
+
+button.plus[disabled], button.minus[disabled] {
+  background-color: #DDDDDD;
+}
+
+hr {
+  width: 90%;
+  border: 0;
+  height: 1px;
+  background-image: -webkit-linear-gradient(left, rgba(255,255,255,0), rgba(255,255,255,0.75), rgba(255,255,255,0));
+  background-image:    -moz-linear-gradient(left, rgba(255,255,255,0), rgba(255,255,255,0.75), rgba(255,255,255,0));
+  background-image:     -ms-linear-gradient(left, rgba(255,255,255,0), rgba(255,255,255,0.75), rgba(255,255,255,0));
+  background-image:      -o-linear-gradient(left, rgba(255,255,255,0), rgba(255,255,255,0.75), rgba(255,255,255,0));
+}
+
+h3 {
+  font-size: 25px;
+}
+h4 {
+  font-size: 20px;
+}
+
+.list-item {
+  font-size: 20px;
+  text-align: center;
+
+  border-radius: 5px;
+  border-style: solid;
+  border-width: 1px;
+  border-color: #000000;
+  background-color: #DDDDDD;
+  color: #222222;
+
+  padding: 5px;
+  margin: 5px auto;
+  width: 90%;
+
+  cursor: pointer;
+
+  position: relative;
+}
+
+.self {
+  background-color: #CCFFFF;
+}
+
+.role-setting {
+  position: relative;
+  width: 90%;
+  font-size: 20px;
+  height: 20px;
+
+  padding: 5px;
+  margin: 5px auto;
+}
+
+.role-name {
+  position: absolute;
+  right: 52%;
+  top: 10px;
+}
+
+.role-buttons {
+  position: absolute;
+  left: 52%;
+}
+
+.mod-star {
+  color: yellow;
+  position: absolute;
+  left: 5px;
+  top: 1px;
+}
+
+.ally-check {
+  position: absolute;
+  right: 5px;
+  top: 1px;
+  margin: 2px auto;
+}
+
+.votes {
+  position: absolute;
+  right: 5px;
+  top: 1px;
+}
+
+.votes .mega-octicon {
+  margin: auto 1px;
+}
+
+.last-action {
+  font-size: 15px;
+}
+
+
+.role-villager { background-color: green; }
+.role-mafia { background-color: red; }
+.role-doctor { background-color: #FFFFFF; }
+.role-cop { background-color: #007FFF; }
+.role-jester { background-color: #444444; }
+.role-bodyguard { background-color: #FFD700; }

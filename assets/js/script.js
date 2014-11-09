@@ -26,6 +26,12 @@ controller("MainCtrl", function($scope, socket) {
     window.localStorage.id = uuid.v4();
   }
 
+  $scope.range = function(n) {
+    var l = [];
+    for(var i = 0; i < n; i++) l.push(i);
+    return l;
+  }
+
   $scope.me = function() {
     for(var i = 0; i < $scope.playerList.length; i++) {
       if($scope.playerList[i].id === window.localStorage.id.split("-")[0]) {
@@ -72,12 +78,22 @@ controller("MainCtrl", function($scope, socket) {
   };
 
   $scope.countRoles = function() {
+    if(!$scope.gameState || !$scope.gameState.settings || !$scope.gameState.settings.roles) return 0;
+
     var count = 0;
     for(var role in $scope.gameState.settings.roles) {
       if($scope.gameState.settings.roles.hasOwnProperty(role)) {
         count += $scope.gameState.settings.roles[role];
       }
     }
+    return count;
+  }
+
+  $scope.countDead = function() {
+    var count = 0;
+    $scope.playerList.forEach(function(p) {
+      if(p.dead) count++;
+    });
     return count;
   }
 
@@ -89,12 +105,14 @@ controller("MainCtrl", function($scope, socket) {
     socket.emit("gameAction", {type: "night"});
   };
 
-  $scope.lynchPlayer = function(player) {
-    socket.emit("gameAction", {type: "lynch", data: player});
-  };
-
-  $scope.votePlayer = function(player) {
-    socket.emit("gameAction", {type: "vote", data: player});
+  $scope.clickPlayer = function(player) {
+    if($scope.isMod() && $scope.gameState.started && !$scope.gameState.night) {
+      // Lynch the player
+      socket.emit("gameAction", {type: "lynch", data: player.id});
+    } else if($scope.gameState.started && $scope.gameState.night && $scope.canVote[$scope.me().role] && player.role != $scope.me().role) {
+      // Vote for the player
+      socket.emit("gameAction", {type: "vote", data: player.id});
+    }
   };
 
   socket.on("gameList", function(gameList) {
