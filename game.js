@@ -60,6 +60,8 @@ function Game(io) {
 
   this.lastAction = ""; // description of the last thing to happen (lynching, night death)
 
+  this.lastUpdate = new Date(); // used to garbage collect inactive games
+
   this.settings = {
     roles: {
       "mafia": 1,
@@ -324,6 +326,8 @@ Game.prototype.endNight = function() {
 }
 
 Game.prototype.gameAction = function(id, action, data) {
+  this.lastUpdate = new Date();
+
   if(action === "close") { // Closes the game
     if(id === this.moderator && !this.closed) {
       this.closed = true;

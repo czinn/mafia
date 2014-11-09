@@ -23,15 +23,23 @@ module.exports = function(server) {
       return list;
     }
 
-    // Sends the updated game list to everyone
-    function updateGameList() {
+    function cleanGameList() {
       // See if any games can be removed
       for(var i = 0; i < games.length; i++) {
-        if(games[i].players.length == 0) {
+        // If there aren't any players in the game, or it's been more than 15 minutes
+        if(games[i].players.length == 0 || new Date() - games[i].lastUpdate > 1000 * 60 * 15) {
+          // Mark as deleted
+          games[i].deleted = true;
+
           games.splice(i, 1);
           i--;
         }
       }
+    }
+
+    // Sends the updated game list to everyone
+    function updateGameList() {
+      cleanGameList();
 
       io.sockets.emit("gameList", gameList());
     }
@@ -48,6 +56,7 @@ module.exports = function(server) {
           }
         }
       }
+      cleanGameList();
       socket.emit("gameList", gameList());
     });
 
@@ -74,6 +83,7 @@ module.exports = function(server) {
     });
 
     socket.on("leaveGame", function(data) {
+      if(game && game.deleted) game = null;
       if(!id || !name || !game) return;
 
       game.leavePlayer(id);
@@ -82,6 +92,7 @@ module.exports = function(server) {
     });
 
     socket.on("gameAction", function(data) {
+      if(game && game.deleted) game = null;
       if(!id || !name || !game) return;
       game.gameAction(id, data.type, data.data);
     });
