@@ -22,6 +22,21 @@ var canVote = {
   "bodyguard": true
 }; // role does some sort of action at night
 
+var deathQuotes = require("./deathQuotes");
+
+function pluralize(name) {
+  if(name[name.length - 1].toLowerCase() === "s")
+    return name + "'";
+  else
+    return name + "'s";
+}
+
+function getDeathQuote(name) {
+  var quote = deathQuotes[Math.floor(Math.random() * deathQuotes.length)];
+  quote = quote.replace("%s", name).replace("%p", pluralize(name));
+  return quote;
+}
+
 function Player(id, socket, name) {
   this.id = id;
   this.socket = socket;
@@ -291,9 +306,9 @@ Game.prototype.endNight = function() {
   if(deadPeople.length == 0) {
     this.lastAction = "Nobody died last night.";
   } else {
-    this.lastAction = "Found dead this morning:";
+    this.lastAction = "";
     deadPeople.forEach(function(p) {
-      _this.lastAction += " " + p.name;
+      _this.lastAction += getDeathQuote(p.name) + " ";
     });
   }
 
@@ -302,6 +317,7 @@ Game.prototype.endNight = function() {
   });
 
   this.night = false;
+  this.dayNumber += 1;
 
   this.sendGameStateUpdate();
   this.sendPlayerListUpdate(null);
