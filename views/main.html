@@ -1,10 +1,67 @@
-<html>
+<html ng-app="mafiaApp">
   <head>
     <title>Mafia Mockup</title>
     <link rel="stylesheet" href="assets/css/style.css">
   </head>
-  <body>
+  <body ng-controller="MainCtrl">
+    <div ng-show="view == 'enterName'">
+      Enter Name: <input type="text" ng-model="name"><br>
+      <button type="button" ng-click="setName()">Go</button>
+    </div>
+    <div ng-show="view == 'gameList'">
+      <button type="button" ng-click="createGame()">Create Game</button>
+      <ul>
+        <li ng-repeat="game in gameList"><a href="#" ng-click="joinGame(game)">{{ game }}</a></li>
+      </ul>
+    </div>
+    <div ng-show="view == 'game'">
+      <h1 ng-show="!gameState.closed">Waiting for players...</h1>
+      <h1 ng-show="gameState.closed && !gameState.started">Choosing roles...</h1>
+      <h1 ng-show="gameState.started && !gameState.night">Day {{ gameState.dayNumber }}</h1>
+      <h1 ng-show="gameState.started && gameState.night">Night {{ gameState.dayNumber }}</h1>
+
+      <p ng-show="gameState.started">{{ gameState.lastAction }}</p>
+
+      <button type="button" ng-show="isMod() && !gameState.closed" ng-click="closeEntry()">Close Entry</button>
+      <div ng-show="isMod() && gameState.closed && !gameState.started">
+        <div ng-repeat="(role, count) in gameState.settings.roles">
+          {{ role }}:
+          <button type="button" ng-disabled="count == 0" ng-click="changeRoleCount(role, -1)">-</button>
+          {{ count }}
+          <button type="button" ng-disabled="countRoles() >= playerList.length" ng-click="changeRoleCount(role, +1)">+</button>
+        </div>
+        <button type="button" ng-click="submitSettings()">Start Game</button>
+      </div>
+      <button type="button" ng-show="isMod() && gameState.started && !gameState.night" ng-click="startNight()">Go To Night</button>
+
+      <div ng-show="gameState.started">Role: <a href="#" ng-click="toggleHidden()">{{ roleHidden ? "hidden" : me().role }}</a></div>
+      <div ng-show="copInfo && !roleHidden">{{ copInfo }}</div>
+
+      <hl>
+      <ul>
+        <li ng-repeat="player in playerList" ng-show="!player.dead">
+          {{ player.name }}
+          <span ng-show="player.mod">(mod)</span>
+          <span ng-show="player.role && player.id != me().id && player.role == me().role && !roleHidden">{{ player.role }}</span>
+          <a href="#" ng-show="gameState.night && player.role != me().role && canVote[me().role] && !me().dead" ng-click="votePlayer(player.id)">Vote ({{ player.votes }})</a>
+          <a href="#" ng-show="isMod() && gameState.started && !gameState.night" ng-click="lynchPlayer(player.id)">Lynch</a>
+        </li>
+      </ul>
+      <hl>
+      <h3>Dead</h3>
+      <ul>
+        <li ng-repeat="player in playerList" ng-show="player.dead">
+          {{ player.name }}
+          <span ng-show="player.mod">(mod)</span>
+          <span ng-show="player.lynched && player.role">{{ player.role }}</span>
+        </li>
+      </ul>
+    </div>
     
+    <script src="assets/js/uuid.js"></script>
+    <script src="socket.io/socket.io.js"></script>
+    <script src="lib/angular/angular.min.js"></script>
+    <script src="lib/angular-socket-io/socket.min.js"></script>
     <script src="assets/js/script.js"></script>
   </body>
 </html>

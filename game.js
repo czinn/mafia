@@ -13,14 +13,14 @@ var uuid = require("node-uuid");
  * - vigilante
  */
 
- var canVote = {
+var canVote = {
   "villager": false,
   "mafia": true,
   "cop": true,
   "doctor": true,
   "jester": false,
   "bodyguard": true
- }; // role does some sort of action at night
+}; // role does some sort of action at night
 
 function Player(id, socket, name) {
   this.id = id;
@@ -36,7 +36,7 @@ function Player(id, socket, name) {
 function Game(io) {
   this.io = io;
   this.players = [];
-  this.room = uuid.v4(); // Socket room for players to join
+  this.room = uuid.v4(); // essentially the game id
   this.closed = false; // closed to new joins (so that the moderator knows how many people there are)
   this.started = false; // game actually started (roles dealt out, etc)
   this.dayNumber = 1; // increases at end of night
@@ -49,32 +49,40 @@ function Game(io) {
       "mafia": 3,
       "cop": 2,
       "doctor": 1,
-      "jester": 1
+      "jester": 1,
+      "bodyguard": 1
     }
   }; // settings for the game
 
   this.moderator = null; // First player to join
 }
 
-function addPlayer(id, socket, name) {
+Game.prototype.addPlayer = function(id, socket, name) {
   this.players.push(new Player(id, socket, name));
 
   if(this.moderator === null)
     this.moderator = id;
+
+  socket.emit("gameState", this.gameState());
+  this.sendPlayerListUpdate(null);
 }
 
-function reconnectPlayer(id, socket, name) {
+Game.prototype.reconnectPlayer = function(id, socket, name) {
   for(var i = 0; i < this.players.length; i++) {
     if(this.players[i].id === id) {
       this.players[i].socket = socket;
       this.players[i].name = name;
+
+      socket.emit("gameState", this.gameState());
+      this.sendPlayerListUpdate(null);
+
       return true;
     }
   }
   return false;
 }
 
-function playerById(id) {
+Game.prototype.playerById = function(id) {
   for(var i = 0; i < this.players.length; i++) {
     // Check for full id or shortened id
     if(this.players[i].id === id || this.players[i].id.split("-")[0] === id) {
@@ -85,29 +93,30 @@ function playerById(id) {
 }
 
 // Determines the number of votes for a specific player from a specific role
-function votesForBy(id, role) {
+Game.prototype.votesForBy = function(id, role) {
   var count = 0;
   for(var i = 0; i < this.players.length; i++) {
-    if(this.players[i].votingFor === id && this.players[i].role = role)
+    if(this.players[i].votingFor === id && this.players[i].role === role)
       count++;
   }
   return count;
 }
 
 // Makes a list of players for a specific player
-function playerListFor(id) {
+Game.prototype.playerListFor = function(id) {
   var p = this.playerById(id);
   if(p === null) return [];
 
   var list = [];
-  for(var i = 0; i < this.players; i++) {
+  for(var i = 0; i < this.players.length; i++) {
     var obj = {
       id: this.players[i].id.split("-")[0], // shortened id for identification, but can't impersonate
       name: this.players[i].name,
       role: this.players[i].role === p.role || this.players[i].lynched ? this.players[i].role : null,
-      votes: this.players[i].role === p.role ? votesForBy(this.players[i].id, p.role) : 0,
+      votes: this.players[i].role === p.role ? this.votesForBy(this.players[i].id, p.role) : 0,
       mod: this.players[i].id === this.moderator,
-      dead: this.players[i].dead
+      dead: this.players[i].dead,
+      lynched: this.players[i].lynched
     };
     list.push(obj);
   }
@@ -116,7 +125,7 @@ function playerListFor(id) {
 }
 
 // Gets the current game state, suitable for sending to all players
-function gameState() {
+Game.prototype.gameState = function() {
   var obj = {
     room: this.room,
     closed: this.closed,
@@ -126,27 +135,31 @@ function gameState() {
     settings: this.settings,
     lastAction: this.lastAction
   };
+  return obj;
 }
 
 // Sends all players the current game state
-function sendGameStateUpdate() {
-  for(var i = 0; i < this.players.length; i++) {\
+Game.prototype.sendGameStateUpdate = function() {
+  _this = this;
+
   this.players.forEach(function(p) {
-    p.socket.emit("gameState", this.gameState());
+    p.socket.emit("gameState", _this.gameState());
   });
 }
 
 // Sends all players of a specific role the updated player list
 // If role is null, sends it to everyone
-function sendPlayerListUpdate(role) {
+Game.prototype.sendPlayerListUpdate = function(role) {
+  _this = this;
+
   this.players.forEach(function(p) {
     if(p.role === role || role === null) {
-      p.socket.emit("playerList", this.playerListFor(p.id));
+      p.socket.emit("playerList", _this.playerListFor(p.id));
     }
   });
 }
 
-function dealRoles() {
+Game.prototype.dealRoles = function() {
   var roleList = [];
   for(var role in this.settings.roles) {
     if(this.settings.roles.hasOwnProperty(role)) {
@@ -169,14 +182,17 @@ function dealRoles() {
     roleList[j] = t;
   }
 
+  console.log(roleList);
+
   // Deal one role out to each player
   this.players.forEach(function(p, i) {
     p.role = roleList[i];
+    console.log(p.name + " is a " + roleList[i]);
   });
 }
 
 // Resets some values and starts the night
-function startNight() {
+Game.prototype.startNight = function() {
   this.players.forEach(function(p) {
     p.votingFor = null;
   });
@@ -187,20 +203,29 @@ function startNight() {
 }
 
 // Checks whether all multi-roles agree on what's happening
-function isNightOver() {
+Game.prototype.isNightOver = function() {
   var targets = {};
-  this.players.forEach(function(p) {
+  for(var i = 0; i < this.players.length; i++) {
+    var p = this.players[i];
+    if(p.dead)
+      continue;
+
+    if(p.votingFor === null && canVote[p.role])
+      return false;
+
     if(targets[p.role] === undefined || targets[p.role] === p.votingFor) {
       targets[p.role] = p.votingFor;
     } else {
       return false;
     }
-  });
+  }
   return targets;
 }
 
 // Figures out what happened and ends the night
-function endNight() {
+Game.prototype.endNight = function() {
+  _this = this;
+
   var targets = this.isNightOver();
 
   var deadPeople = [];
@@ -227,12 +252,23 @@ function endNight() {
     deadPeople.push(p);
   }
 
-  // TODO: Send the cops their report
-
-  this.lastAction = "Found dead this morning:";
-  deadPeople.forEach(function(p) {
-    lastAction.push(" " + p.name);
+  // Cop info
+  var copTarget = this.playerById(targets["cop"]);
+  var guilty = copTarget.role === "mafia" || copTarget.role === "doctor" || copTarget.role === "bodyguard";
+  this.players.forEach(function(p) {
+    if(p.role === "cop") {
+      p.socket.emit("copInfo", copTarget.name + " is " + (guilty ? "guilty" : "innocent") + ".");
+    }
   });
+
+  if(deadPeople.length == 0) {
+    this.lastAction = "Nobody died last night.";
+  } else {
+    this.lastAction = "Found dead this morning:";
+    deadPeople.forEach(function(p) {
+      _this.lastAction += " " + p.name;
+    });
+  }
 
   this.night = false;
 
@@ -240,7 +276,7 @@ function endNight() {
   this.sendPlayerListUpdate(null);
 }
 
-function gameAction(id, action, data) {
+Game.prototype.gameAction = function(id, action, data) {
   if(action === "close") { // Closes the game
     if(id === this.moderator && !this.closed) {
       this.closed = true;
@@ -252,14 +288,14 @@ function gameAction(id, action, data) {
       this.settings = data;
       // TODO: Make sure settings are valid; right now, trust that the client is a nice client
 
-      dealRoles();
+      this.dealRoles();
 
       this.sendGameStateUpdate();
       this.sendPlayerListUpdate(null);
     }
   } else if(action === "night") {
     if(id === this.moderator && this.started && !this.night) {
-      startNight();
+      this.startNight();
     }
   } else if(action === "lynch") {
     if(id === this.moderator && this.started && !this.night) {
@@ -278,7 +314,9 @@ function gameAction(id, action, data) {
     if(this.started && this.night) {
       var self = this.playerById(id);
       var target = this.playerById(data);
-      if(self && target && self.id !== target.id && self.role !== target.role && canVote[self.role]) {
+
+      // TODO: More validation
+      if(self && target && self.id !== target.id && self.role !== target.role && !target.dead && canVote[self.role]) {
         self.votingFor = data;
 
         this.sendPlayerListUpdate(self.role);

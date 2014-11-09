@@ -11,6 +11,7 @@ app.set("view engine", "html");
 
 // Set up static directory
 app.use("/assets", express.static(__dirname + "/assets"));
+app.use("/lib", express.static(__dirname + "/bower_components"));
 
 // Require routes
 require("./routes")(app);
